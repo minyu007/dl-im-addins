@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useBoolean } from "react";
+import _ from "lodash";
 import {
   Dialog,
   DialogType,
@@ -331,7 +332,12 @@ const App = () => {
     const _item = arr[item.key - 1];
     await getDriver(value, async (driverArr, title) => {
       if (driverArr && driverArr.length && isValidDrive(driverArr)) {
-        // if (cacheArr.find((v) => v.key == item.key) == -1) {
+        const index = cacheArr.findIndex(v => v.key == item.key);
+        // setTest1Value(index);
+        if (index != -1) {
+          cacheArr.splice(index, 1);
+        }
+
         cacheArr.push({
           key: item.key,
           row: value,
@@ -342,9 +348,7 @@ const App = () => {
             step: getValueByFormat(v).step
           }))
         });
-        // }else{
 
-        // }
         const obj = cacheArr.find(v => v.row == value);
         _item.disable = false;
         _item.row = obj.row;
@@ -359,7 +363,8 @@ const App = () => {
         // setTest1Value({ value: cacheArr.length, address: 111 });
         await updateDriverNames(
           tableFixedMatrix.length,
-          arr.map(v => ({ driverName: v.driverName, row: v.row }))
+          locationObjects.year.a.split(",").length,
+          cacheArr.map(v => ({ driverName: v.title.values, row: v.row, cols: v.cols }))
         );
       }
     });
@@ -379,12 +384,14 @@ const App = () => {
         arr[item.key - 1][`address${i}`] = "";
       }
       setItems(arr);
-      await updateDriverNames(
-        tableFixedMatrix.length,
-        arr.map(v => ({ driverName: v.driverName, row: v.row }))
-      );
+
       await resetDrivers(cacheArr[index].cols);
       cacheArr.splice(index, 1);
+      await updateDriverNames(
+        tableFixedMatrix.length,
+        locationObjects.year.a.split(",").length,
+        cacheArr.map(v => ({ driverName: v.title.values, row: v.row, cols: v.cols }))
+      );
       await setCase();
     }
   };
@@ -420,18 +427,20 @@ const App = () => {
 
   const increment = (value, step, address) => {
     const newValue = Math.round((value + step) * 1e12) / 1e12;
-    setDriverIntoFirstSheet(address, newValue, async () => {
-      await setCase();
-    });
+    setDriver(address, newValue);
     return newValue;
   };
+
   const decrement = (value, step, address) => {
     const newValue = Math.round((value - step) * 1e12) / 1e12;
-    setDriverIntoFirstSheet(address, newValue, async () => {
-      await setCase();
-    });
+    setDriver(address, newValue);
     return newValue;
   };
+
+  const setDriver = _.debounce(async (address, newValue) => {
+    await setDriverIntoFirstSheet(address, newValue);
+    await setCase();
+  }, 1000);
 
   const setCase = async () => {
     if (currentType == "base") {
@@ -539,28 +548,15 @@ const App = () => {
                     testValue.map((v, i) => {
                       return (
                         <li key={i}>
-                          {v.row} */}
-            {/* {v.address +
-                            " - " +
-                            v.values +
-                            " - " +
-                            v.numberFormat +
-                            "(numberFormat)-" +
-                            v.valueTypes +
-                            "(valueTypes)-" +
-                            v.formulas +
-                            "(formulas)-" +
-                            v.formulasLocal +
-                            "(formulasLocal)" +
-                            v.formulasR1C1 +
-                            "(formulasR1C1)"} */}
-            {/* </li>
+                          {v.row}
+                          {v.values}
+                        </li>
                       );
                     })}
                 </ul>
               }
             </Stack> */}
-            {/* <Stack horizontal>{test1Value && <span>{test1Value}</span>}</Stack> */}
+            <Stack horizontal>{test1Value && <span>{test1Value}</span>}</Stack>
             {/*  <Stack horizontal>
               <MessageBar
                 messageBarType={MessageBarType.warning}

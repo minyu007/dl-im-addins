@@ -186,6 +186,7 @@ export const drawTableFixedMatrix = async (aYear, eYear, matrix) => {
   const matrixLen = matrix.length;
   await Excel.run(async context => {
     const sheets = context.workbook.worksheets;
+    const firstSheet = context.workbook.worksheets.getFirst();
     let sheet = sheets.getLast();
     sheet.load("name");
     await context.sync();
@@ -214,14 +215,19 @@ export const drawTableFixedMatrix = async (aYear, eYear, matrix) => {
         const range = sheet.getRange(`${excelColumnName.intToExcelCol(i * eYearLen + 2 + aYearLen + ii)}2`);
         range.formulas = [[`=${_eYear[ii]}`]];
         range.format.font.bold = true;
+        range.format.fill.color = title.fillColor;
+        range.format.font.color = title.fontColor;
+        range.format.horizontalAlignment = "Center";
         range.load("address");
         caseArr.push(range);
       }
       const _range = sheet.getRange(`${excelColumnName.intToExcelCol(i * eYearLen + 2 + aYearLen)}1`);
       _range.values = title.values;
+      _range.format.font.bold = true;
       _range.format.fill.color = title.fillColor;
       _range.format.font.color = title.fontColor;
-      _range.load("address");
+      _range.format.horizontalAlignment = "Center";
+      _range.load("address,numberFormat");
       caseRangeArr.push(_range);
       eYearRangeArr.push(caseArr);
     }
@@ -230,15 +236,20 @@ export const drawTableFixedMatrix = async (aYear, eYear, matrix) => {
     const range = sheet.getRange(`B1:${excelColumnName.intToExcelCol(aYearLen + 1)}1`);
     range.merge();
     range.values = "Actual";
+    range.format.font.bold = true;
     range.format.fill.color = "#808080";
     range.format.font.color = "white";
+    range.format.horizontalAlignment = "Center";
 
     const aYearRangeArr = [];
     for (let i = 0, l = _aYear.length; i < l; i++) {
       const range = sheet.getRange(`${excelColumnName.intToExcelCol(i + 2)}2`);
       range.formulas = [[`=${_aYear[i]}`]];
       range.format.font.bold = true;
-      range.load("address");
+      range.format.fill.color = "#808080";
+      range.format.font.color = "white";
+      range.format.horizontalAlignment = "Center";
+      range.load("address,numberFormat");
       aYearRangeArr.push(range);
     }
     sheet.getRange(`B:${excelColumnName.intToExcelCol(aYearLen)}`).group("ByColumns");
@@ -250,22 +261,41 @@ export const drawTableFixedMatrix = async (aYear, eYear, matrix) => {
       const titleRange = sheet.getRange(`A${i + 3}`);
       titleRange.formulas = [[`=${title}`]];
       titleRange.format.font.bold = true;
-      titleRange.load("address");
+      titleRange.load("address, numberFormat");
       titleRangeArr.push(titleRange);
       // for (let ii = 1, ll = matrix[i].length; ii < ll; ii++) {}
       const arr = [];
       for (let ii = 1, ll = matrix[i].length; ii < ll; ii++) {
         const col = matrix[i][ii];
         const range = sheet.getRange(`${excelColumnName.intToExcelCol(ii + 1)}${i + 3}`);
+        const _range = firstSheet.getRange(col);
+        _range.load("numberFormat");
+        await context.sync();
         range.formulas = [[`=${col}`]];
-        range.numberFormat = "0.00";
-        range.load("address");
+        range.numberFormat = _range.numberFormat;
+        range.load("address", "numberFormat");
         arr.push(range);
       }
       aYearValueRangeArr.push(arr);
     }
-    sheet.getRange(`A${matrixLen + 5}`).values = "Current Drivers:";
-    sheet.getRange(`A${matrixLen + 5}`).format.font.bold = true;
+
+    const driverRange = sheet.getRange(`${excelColumnName.intToExcelCol(aYearLen + 1)}${matrixLen + 5}`);
+    driverRange.values = "Driver";
+    driverRange.format.font.bold = true;
+    driverRange.format.fill.color = "#2A4979";
+    driverRange.format.font.color = "yellow";
+
+    for (let i = 0, l = _eYear.length; i < l; i++) {
+      const range = sheet.getRange(`${excelColumnName.intToExcelCol(aYearLen + 2 + i)}${matrixLen + 5}`);
+      range.formulas = [[`=${_eYear[i]}`]];
+      range.format.font.bold = true;
+      range.format.fill.color = "#2A4979";
+      range.format.font.color = "yellow";
+      // const _range = sheet.getRange(`${excelColumnName.intToExcelCol(aYearLen + 2 + i)}${matrixLen + 4}`);
+      // _range.format.font.bold = true;
+      // _range.format.fill.color = "#2A4979";
+      // _range.format.font.color = "yellow";
+    }
 
     await context.sync();
     for (let iii = 0, lll = titleRangeArr.length; iii < lll; iii++) {
@@ -316,7 +346,7 @@ export const drawTableFixedMatrix = async (aYear, eYear, matrix) => {
           `${excelColumnName.intToExcelCol(ii + 2 + aYearLen)}${matrixLen + 61 + (caseRangeArr.length + 2) * i}`
         );
         range.formulas = `=${arr[ii].address}`;
-        range.numberFormat = "0.00";
+        range.numberFormat = arr[ii].numberFormat;
       }
       for (let ii = 0, ll = caseRangeArr.length; ii < ll; ii++) {
         const range = sheet.getRange(
@@ -327,7 +357,7 @@ export const drawTableFixedMatrix = async (aYear, eYear, matrix) => {
             1}`
         );
         range.formulas = `=${arr[arr.length - 1].address}`;
-        range.numberFormat = "0.00";
+        range.numberFormat = arr[arr.length - 1].numberFormat;
         for (let iii = 0, lll = eYearRangeArr[ii].length; iii < lll; iii++) {
           const range = sheet.getRange(
             `${excelColumnName.intToExcelCol(arr.length + 2 + iii + aYearLen)}${matrixLen +
@@ -336,6 +366,7 @@ export const drawTableFixedMatrix = async (aYear, eYear, matrix) => {
               ii}`
           );
           range.formulas = `=${eYearRangeArr[ii][iii].address.replace(/(\d)+/g, n => parseInt(n) + 1 + i)}`;
+
           range.numberFormat = "0.00";
         }
       }
@@ -386,17 +417,25 @@ export const drawChart = async () => {
   });
 };
 
-export const updateDriverNames = async (len, driver) => {
+export const updateDriverNames = async (len1, len2, driver) => {
   await Excel.run(async context => {
     const sheets = context.workbook.worksheets;
     let sheet = sheets.getItem("Scenario Analysis");
-    // sheet.getRange("A10").values = 1;
+    // for (let i = 0; i < 6; i++) {
+    const range1 = sheet.getRange(
+      `${excelColumnName.intToExcelCol(1 + len2)}${len1 + 6}:${excelColumnName.intToExcelCol(12 + len2)}${len1 + 12}`
+    );
+    range1.clear();
+    // }
     for (let i = 0, l = driver.length; i < l; i++) {
-      const range = sheet.getRange(`A${len + 6 + i}`);
-      if (driver[i].driverName) {
-        range.values = (driver[i].driverName + " - row( " + driver[i].row + ")").trim();
-      } else {
-        range.values = "";
+      const range = sheet.getRange(`${excelColumnName.intToExcelCol(1 + len2)}${len1 + 6 + i}`);
+      range.values = (driver[i].driverName + " - row( " + driver[i].row + ")").trim();
+      range.format.font.bold = true;
+      for (let ii = 0, ll = driver[i].cols.length; ii < ll; ii++) {
+        const col = driver[i].cols[ii];
+        const _range = sheet.getRange(`${excelColumnName.intToExcelCol(ii + 2 + len2)}${len1 + 6 + i}`);
+        _range.formulas = `=${col.address}`;
+        _range.numberFormat = col.numberFormat;
       }
     }
     await context.sync();
@@ -404,13 +443,15 @@ export const updateDriverNames = async (len, driver) => {
 };
 
 export const setDriverIntoFirstSheet = async (address, values, callback) => {
-  await Excel.run(async context => {
-    const sheets = context.workbook.worksheets;
-    let firstSheet = sheets.getFirst();
-    firstSheet.getRange(address).values = values;
-    await context.sync();
-    await callback();
-    await context.sync();
+  return new Promise(function(resolve) {
+    Excel.run(function(context) {
+      const sheets = context.workbook.worksheets;
+      let firstSheet = sheets.getFirst();
+      firstSheet.getRange(address).values = values;
+      return context.sync().then(function() {
+        resolve();
+      });
+    });
   });
 };
 
@@ -459,7 +500,7 @@ export const updateTableBaseCase = async (pos, matrix) => {
     const _matrix = matrix.map(v => {
       return v.map(vv => {
         const range = firstSheet.getRange(vv);
-        range.load("values");
+        range.load("values, numberFormat");
         return range;
       });
     });
@@ -469,7 +510,7 @@ export const updateTableBaseCase = async (pos, matrix) => {
         const cell = _matrix[i][ii];
         const range = sheet.getRange(`${excelColumnName.intToExcelCol(pos.startCol + ii)}${i + 3}`);
         range.values = cell.values;
-        range.numberFormat = "0.00";
+        range.numberFormat = cell.numberFormat;
       }
     }
     await context.sync();
@@ -487,7 +528,7 @@ export const updateTableBullCase = async (pos, matrix) => {
     const _matrix = matrix.map(v => {
       return v.map(vv => {
         const range = firstSheet.getRange(vv);
-        range.load("values");
+        range.load("values, numberFormat");
         return range;
       });
     });
@@ -497,7 +538,7 @@ export const updateTableBullCase = async (pos, matrix) => {
         const cell = _matrix[i][ii];
         const range = sheet.getRange(`${excelColumnName.intToExcelCol(pos.startCol + ii)}${i + 3}`);
         range.values = cell.values;
-        range.numberFormat = "0.00";
+        range.numberFormat = cell.numberFormat;
       }
     }
     await context.sync();
@@ -515,7 +556,7 @@ export const updateTableBearCase = async (pos, matrix) => {
     const _matrix = matrix.map(v => {
       return v.map(vv => {
         const range = firstSheet.getRange(vv);
-        range.load("values");
+        range.load("values, numberFormat");
         return range;
       });
     });
@@ -525,7 +566,7 @@ export const updateTableBearCase = async (pos, matrix) => {
         const cell = _matrix[i][ii];
         const range = sheet.getRange(`${excelColumnName.intToExcelCol(pos.startCol + ii)}${i + 3}`);
         range.values = cell.values;
-        range.numberFormat = "0.00";
+        range.numberFormat = cell.numberFormat;
       }
     }
     await context.sync();
@@ -538,14 +579,15 @@ export const activeCaseByPos = async (toPos, fromPos) => {
     let sheet = sheets.getItem("Scenario Analysis");
     if (fromPos) {
       const range = sheet.getRange(
-        `${excelColumnName.intToExcelCol(fromPos.startCol)}${fromPos.startRow - 1}:${excelColumnName.intToExcelCol(
+        `${excelColumnName.intToExcelCol(fromPos.startCol)}${fromPos.startRow}:${excelColumnName.intToExcelCol(
           fromPos.endCol
         )}${fromPos.endRow}`
       );
+
       range.format.fill.color = "white";
     }
     const range = sheet.getRange(
-      `${excelColumnName.intToExcelCol(toPos.startCol)}${toPos.startRow - 1}:${excelColumnName.intToExcelCol(
+      `${excelColumnName.intToExcelCol(toPos.startCol)}${toPos.startRow}:${excelColumnName.intToExcelCol(
         toPos.endCol
       )}${toPos.endRow}`
     );
