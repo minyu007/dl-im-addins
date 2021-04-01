@@ -624,6 +624,15 @@ export const drawChart = async (aYear, eYear, matrix) => {
       series2.format.line.color = "#4EAD5B";
       series3.format.line.color = "#B02318";
 
+      // series0.markerStyle = "Dot";
+      // series1.markerStyle = "Dot";
+      // series2.markerStyle = "Dot";
+      // series3.markerStyle = "Dot";
+      series0.markerForegroundColor = "#808080";
+      series1.markerForegroundColor = "#2A4979";
+      series2.markerForegroundColor = "#4EAD5B";
+      series3.markerForegroundColor = "#B02318";
+
       series1.format.line.lineStyle = "Dash";
       series2.format.line.lineStyle = "Dash";
       series3.format.line.lineStyle = "Dash";
