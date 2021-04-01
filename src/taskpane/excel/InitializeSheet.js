@@ -628,6 +628,11 @@ export const drawChart = async (aYear, eYear, matrix) => {
       // series1.markerStyle = "Dot";
       // series2.markerStyle = "Dot";
       // series3.markerStyle = "Dot";
+      series0.markerBackgroundColor = "white";
+      series1.markerBackgroundColor = "white";
+      series2.markerBackgroundColor = "white";
+      series3.markerBackgroundColor = "white";
+
       series0.markerForegroundColor = "#808080";
       series1.markerForegroundColor = "#2A4979";
       series2.markerForegroundColor = "#4EAD5B";
