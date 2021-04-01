@@ -591,11 +591,11 @@ export const drawChart = async (aYear, eYear, matrix) => {
       const dataRange = sheet.getRange(
         `${excelColumnName.intToExcelCol(1 + aYearLen)}${matrixLen +
           100 +
-          i * (2 + eYearLen)}:${excelColumnName.intToExcelCol(1 + aYearLen + aYearLen + eYearLen)}${matrixLen +
+          i * (2 + titleArr.length)}:${excelColumnName.intToExcelCol(1 + aYearLen + aYearLen + eYearLen)}${matrixLen +
           100 +
           1 +
-          eYearLen +
-          i * (2 + eYearLen)}`
+          titleArr.length +
+          i * (2 + titleArr.length)}`
       );
       const chart = sheet.charts.add("XYScatterSmooth", dataRange, "auto");
       chart.setPosition(
