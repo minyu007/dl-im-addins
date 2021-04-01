@@ -31,57 +31,114 @@ export const getPosition = async (arr, callback) => {
         completeMatch: true,
         matchCase: false
       });
-      const totalRevenuesRange = sheet.findAll("Total revenues", {
+      let totalRevenuesRange = sheet.findAllOrNullObject("Total revenues", {
         completeMatch: true,
         matchCase: false
       });
-      const EBITRange = sheet.findAll("Pre Exceptional EBIT", {
+
+      let EBITRange = sheet.findAllOrNullObject("Pre Exceptional EBIT", {
         completeMatch: true,
         matchCase: false
       });
-      const EPSRange = sheet.findAll("Pre Exceptional EPS", {
+
+      let EPSRange = sheet.findAllOrNullObject("Pre Exceptional EPS", {
         completeMatch: true,
         matchCase: false
       });
+
+      await context.sync();
+      if (!totalRevenuesRange.isNullObject) {
+        totalRevenuesRange.load("address, values");
+      }
+      if (!EBITRange.isNullObject) {
+        EBITRange.load("address, values");
+      }
+      if (!EPSRange.isNullObject) {
+        EPSRange.load("address, values");
+      }
 
       eRanges.load("address, values");
       aRanges.load("address, values");
-      totalRevenuesRange.load("address, values");
-      EBITRange.load("address, values");
-      EPSRange.load("address, values");
+
       sheet.load("name");
 
       await context.sync();
+
+      let str1 = eRanges.address.replace(/(\d)+/g, n => {
+        return --n;
+      });
+      let str2 = aRanges.address.replace(/(\d)+/g, n => {
+        return --n;
+      });
+
+      let rangeE = str1.split(",");
+      let rangeA = str2.split(",");
+
+      rangeE = rangeE.map(v => {
+        const range = sheet.getRange(v);
+        range.load("address, values");
+        return range;
+      });
+      rangeA = rangeA.map(v => {
+        const range = sheet.getRange(v);
+        range.load("address, values");
+        return range;
+      });
+
+      await context.sync();
+
+      const arr1 = [];
+      const arr2 = [];
+      for (let i = 0, l = rangeE.length; i < l; i++) {
+        const values = `${rangeE[i].values}`;
+        const address = rangeE[i].address;
+        if (values.length == 4 && /^[0-9]+[0-9]*[0-9]*$/.test(values) && parseInt(values) >= 2015) {
+          arr1.push(address);
+        }
+      }
+      for (let i = 0, l = rangeA.length; i < l; i++) {
+        const values = `${rangeA[i].values}`;
+        const address = rangeA[i].address;
+        if (values.length == 4 && /^[0-9]+[0-9]*[0-9]*$/.test(values) && parseInt(values) >= 2015) {
+          arr2.push(address);
+        }
+      }
+      const strE = arr1.join(",");
+      const strA = arr2.join(",");
+
       let rangeObj = {
         year: {
-          e: eRanges.address.replace(/(\d)+/g, n => {
-            return --n;
-          }),
-          a: aRanges.address.replace(/(\d)+/g, n => {
-            return --n;
-          })
-        },
-        totalRevenues: {
-          e: eRanges.address.replace(/(\d)+/g, totalRevenuesRange.address.replace(/^\D+/g, "")),
-          a: aRanges.address.replace(/(\d)+/g, totalRevenuesRange.address.replace(/^\D+/g, "")),
-          title: totalRevenuesRange.address
-        },
-        EBIT: {
-          e: eRanges.address.replace(/(\d)+/g, EBITRange.address.replace(/^\D+/g, "")),
-          a: aRanges.address.replace(/(\d)+/g, EBITRange.address.replace(/^\D+/g, "")),
-          title: EBITRange.address
-        },
-        EPS: {
-          e: eRanges.address.replace(/(\d)+/g, EPSRange.address.replace(/^\D+/g, "")),
-          a: aRanges.address.replace(/(\d)+/g, EPSRange.address.replace(/^\D+/g, "")),
-          title: EPSRange.address
+          e: strE,
+          a: strA
         }
       };
+      if (!totalRevenuesRange.isNullObject) {
+        rangeObj["totalRevenues"] = {
+          e: strE.replace(/(\d)+/g, totalRevenuesRange.address.replace(/^\D+/g, "")),
+          a: strA.replace(/(\d)+/g, totalRevenuesRange.address.replace(/^\D+/g, "")),
+          title: totalRevenuesRange.address
+        };
+      }
+      if (!EBITRange.isNullObject) {
+        rangeObj["EBIT"] = {
+          e: strE.replace(/(\d)+/g, EBITRange.address.replace(/^\D+/g, "")),
+          a: strA.replace(/(\d)+/g, EBITRange.address.replace(/^\D+/g, "")),
+          title: EBITRange.address
+        };
+      }
+
+      if (!EPSRange.isNullObject) {
+        rangeObj["EPSRange"] = {
+          e: strE.replace(/(\d)+/g, EPSRange.address.replace(/^\D+/g, "")),
+          a: strA.replace(/(\d)+/g, EPSRange.address.replace(/^\D+/g, "")),
+          title: EPSRange.address
+        };
+      }
 
       for (let i = 0, l = arr.length; i < l; i++) {
         rangeObj[`customize${i}`] = {
-          e: eRanges.address.replace(/(\d)+/g, arr[i]),
-          a: aRanges.address.replace(/(\d)+/g, arr[i]),
+          e: strE.replace(/(\d)+/g, arr[i]),
+          a: strA.replace(/(\d)+/g, arr[i]),
           title: EPSRange.address.replace(/(\d)+/g, arr[i])
         };
       }
@@ -279,30 +336,17 @@ export const drawTableFixedMatrix = async (aYear, eYear, matrix) => {
       aYearValueRangeArr.push(arr);
     }
 
-    const driverRange = sheet.getRange(`${excelColumnName.intToExcelCol(aYearLen + 1)}${matrixLen + 5}`);
-    driverRange.values = "Driver";
+    const driverRange = sheet.getRange(`A${matrixLen + 3}`);
+    driverRange.values = "Drivers";
     driverRange.format.font.bold = true;
-    driverRange.format.fill.color = "#2A4979";
-    driverRange.format.font.color = "yellow";
-
-    for (let i = 0, l = _eYear.length; i < l; i++) {
-      const range = sheet.getRange(`${excelColumnName.intToExcelCol(aYearLen + 2 + i)}${matrixLen + 5}`);
-      range.formulas = [[`=${_eYear[i]}`]];
-      range.format.font.bold = true;
-      range.format.fill.color = "#2A4979";
-      range.format.font.color = "yellow";
-      // const _range = sheet.getRange(`${excelColumnName.intToExcelCol(aYearLen + 2 + i)}${matrixLen + 4}`);
-      // _range.format.font.bold = true;
-      // _range.format.fill.color = "#2A4979";
-      // _range.format.font.color = "yellow";
-    }
+    driverRange.format.font.color = "blue";
 
     await context.sync();
     for (let iii = 0, lll = titleRangeArr.length; iii < lll; iii++) {
       for (let i = 0, l = aYearRangeArr.length; i < l; i++) {
         const range = sheet.getRange(
           `${excelColumnName.intToExcelCol(2 + aYearRangeArr.length + i)}${matrixLen +
-            60 +
+            100 +
             (caseRangeArr.length + 2) * iii}`
         );
         range.formulas = `=${aYearRangeArr[i].address}`;
@@ -314,7 +358,7 @@ export const drawTableFixedMatrix = async (aYear, eYear, matrix) => {
           for (let ii = 0, ll = eYearRange.length; ii < ll; ii++) {
             const range = sheet.getRange(
               `${excelColumnName.intToExcelCol(2 + aYearLen * 2 + ii)}${matrixLen +
-                60 +
+                100 +
                 (caseRangeArr.length + 2) * iii}`
             );
             range.formulas = `=${eYearRange[ii].address}`;
@@ -326,13 +370,13 @@ export const drawTableFixedMatrix = async (aYear, eYear, matrix) => {
 
     for (let i = 0, l = titleRangeArr.length; i < l; i++) {
       const range = sheet.getRange(
-        `${excelColumnName.intToExcelCol(aYearLen + 1)}${matrixLen + 61 + (caseRangeArr.length + 2) * i}`
+        `${excelColumnName.intToExcelCol(aYearLen + 1)}${matrixLen + 101 + (caseRangeArr.length + 2) * i}`
       );
       range.formulas = `=${titleRangeArr[i].address}`;
       range.format.font.bold = true;
       for (let ii = 0, ll = caseRangeArr.length; ii < ll; ii++) {
         const range = sheet.getRange(
-          `${excelColumnName.intToExcelCol(aYearLen + 1)}${matrixLen + 61 + (caseRangeArr.length + 2) * i + ii + 1}`
+          `${excelColumnName.intToExcelCol(aYearLen + 1)}${matrixLen + 101 + (caseRangeArr.length + 2) * i + ii + 1}`
         );
         range.formulas = `=${caseRangeArr[ii].address}`;
         range.format.font.bold = true;
@@ -343,7 +387,7 @@ export const drawTableFixedMatrix = async (aYear, eYear, matrix) => {
       const arr = aYearValueRangeArr[i];
       for (let ii = 0, ll = arr.length; ii < ll; ii++) {
         const range = sheet.getRange(
-          `${excelColumnName.intToExcelCol(ii + 2 + aYearLen)}${matrixLen + 61 + (caseRangeArr.length + 2) * i}`
+          `${excelColumnName.intToExcelCol(ii + 2 + aYearLen)}${matrixLen + 101 + (caseRangeArr.length + 2) * i}`
         );
         range.formulas = `=${arr[ii].address}`;
         range.numberFormat = arr[ii].numberFormat;
@@ -351,7 +395,7 @@ export const drawTableFixedMatrix = async (aYear, eYear, matrix) => {
       for (let ii = 0, ll = caseRangeArr.length; ii < ll; ii++) {
         const range = sheet.getRange(
           `${excelColumnName.intToExcelCol(arr.length + 1 + aYearLen)}${matrixLen +
-            61 +
+            101 +
             (caseRangeArr.length + 2) * i +
             ii +
             1}`
@@ -361,7 +405,7 @@ export const drawTableFixedMatrix = async (aYear, eYear, matrix) => {
         for (let iii = 0, lll = eYearRangeArr[ii].length; iii < lll; iii++) {
           const range = sheet.getRange(
             `${excelColumnName.intToExcelCol(arr.length + 2 + iii + aYearLen)}${matrixLen +
-              62 +
+              102 +
               (caseRangeArr.length + 2) * i +
               ii}`
           );
@@ -376,66 +420,52 @@ export const drawTableFixedMatrix = async (aYear, eYear, matrix) => {
   });
 };
 
-export const drawChart = async () => {
-  await Excel.run(async context => {
-    const sheets = context.workbook.worksheets;
-    const sheet = sheets.getItem("Scenario Analysis");
-    const dataRange = sheet.getRange("G63:P67");
-    const chart = sheet.charts.add("XYScatterSmooth", dataRange, "auto");
-    chart.setPosition("H12", "L25");
-    chart.title.text = "Total Revenue";
-    chart.legend.position = "bottom";
-    chart.legend.format.fill.setSolidColor("white");
-
-    let series = chart.series;
-    let series0 = series.getItemAt(0);
-    let series1 = series.getItemAt(1);
-    let series2 = series.getItemAt(2);
-    let series3 = series.getItemAt(3);
-    series1.markerStyle = "Dot";
-    series2.markerStyle = "Dot";
-    series3.markerStyle = "Dot";
-    series1.markerForegroundColor = "#2A4979";
-    series2.markerForegroundColor = "#4EAD5B";
-    series3.markerForegroundColor = "#B02318";
-
-    const dataRange2 = sheet.getRange("G68:P72");
-    const chart2 = sheet.charts.add("Line", dataRange2, "auto");
-    chart2.setPosition("M12", "Q25");
-    chart2.title.text = "Pre Exceptional EBIT";
-    chart2.legend.position = "bottom";
-    chart2.legend.format.fill.setSolidColor("white");
-
-    const dataRange3 = sheet.getRange("G73:P77");
-    const chart3 = sheet.charts.add("Line", dataRange3, "auto");
-    chart3.setPosition("H26", "L38");
-    chart3.title.text = "Pre Exceptional EPS";
-    chart3.legend.position = "bottom";
-    chart3.legend.format.fill.setSolidColor("white");
-
-    await context.sync();
-  });
-};
-
 export const updateDriverNames = async (len1, len2, driver) => {
   await Excel.run(async context => {
     const sheets = context.workbook.worksheets;
     let sheet = sheets.getItem("Scenario Analysis");
-    // for (let i = 0; i < 6; i++) {
-    const range1 = sheet.getRange(
-      `${excelColumnName.intToExcelCol(1 + len2)}${len1 + 6}:${excelColumnName.intToExcelCol(12 + len2)}${len1 + 12}`
-    );
+    const range1 = sheet.getRange(`A${len1 + 4}:${excelColumnName.intToExcelCol(12 + len2 + len1)}${len1 + 10}`);
+    // range1.format.fill.color = "white";
     range1.clear();
-    // }
+
     for (let i = 0, l = driver.length; i < l; i++) {
-      const range = sheet.getRange(`${excelColumnName.intToExcelCol(1 + len2)}${len1 + 6 + i}`);
+      const range = sheet.getRange(`A${len1 + 4 + i}`);
       range.values = (driver[i].driverName + " - row( " + driver[i].row + ")").trim();
       range.format.font.bold = true;
-      for (let ii = 0, ll = driver[i].cols.length; ii < ll; ii++) {
-        const col = driver[i].cols[ii];
-        const _range = sheet.getRange(`${excelColumnName.intToExcelCol(ii + 2 + len2)}${len1 + 6 + i}`);
-        _range.formulas = `=${col.address}`;
-        _range.numberFormat = col.numberFormat;
+
+      // for (let ii = 0, ll = driver[i].cols.length; ii < ll; ii++) {
+      //   const col = driver[i].cols[ii];
+      //   const _range = sheet.getRange(`${excelColumnName.intToExcelCol(ii + 2 + len2)}${len1 + 4 + i}`);
+      //   _range.formulas = `=${col.address}`;
+      //   _range.numberFormat = col.numberFormat;
+      // }
+    }
+    await context.sync();
+  });
+};
+
+export const updateDriverData = async (pos, driver) => {
+  if (!driver || !driver.length || !pos) {
+    return;
+  }
+  await Excel.run(async context => {
+    const sheets = context.workbook.worksheets;
+    let firstSheet = sheets.getFirst();
+    let sheet = sheets.getItem("Scenario Analysis");
+    const _driver = driver.map(v => {
+      return v.map(vv => {
+        const range = firstSheet.getRange(vv.address);
+        range.load("values, numberFormat");
+        return range;
+      });
+    });
+    await context.sync();
+    for (let i = 0, l = _driver.length; i < l; i++) {
+      for (let ii = 0, ll = _driver[i].length; ii < ll; ii++) {
+        const cell = _driver[i][ii];
+        const range = sheet.getRange(`${excelColumnName.intToExcelCol(pos.startCol + ii)}${i + 7}`);
+        range.values = cell.values;
+        range.numberFormat = cell.numberFormat;
       }
     }
     await context.sync();
@@ -469,83 +499,10 @@ export const resetDrivers = async ranges => {
       }
     }
     await context.sync();
-    // return context.sync().then(function() {
-    //   resolve();
-    // });
-    // }).catch(errorHandlerFunction);
-  });
-  // await Excel.run(async context => {
-  //   await callback();
-  //   await context.sync();
-  // });
-};
-
-// export const drawChartTable = async () => {
-//   await Excel.run(async context => {
-//     const sheets = context.workbook.worksheets;
-//     let sheet = sheets.getItem("Scenario Analysis");
-
-//     await context.sync();
-//   });
-// };
-
-export const updateTableBaseCase = async (pos, matrix) => {
-  if (!matrix || !matrix.length || !pos) {
-    return;
-  }
-  await Excel.run(async context => {
-    const sheets = context.workbook.worksheets;
-    let firstSheet = sheets.getFirst();
-    let sheet = sheets.getItem("Scenario Analysis");
-    const _matrix = matrix.map(v => {
-      return v.map(vv => {
-        const range = firstSheet.getRange(vv);
-        range.load("values, numberFormat");
-        return range;
-      });
-    });
-    await context.sync();
-    for (let i = 0, l = _matrix.length; i < l; i++) {
-      for (let ii = 0, ll = _matrix[i].length; ii < ll; ii++) {
-        const cell = _matrix[i][ii];
-        const range = sheet.getRange(`${excelColumnName.intToExcelCol(pos.startCol + ii)}${i + 3}`);
-        range.values = cell.values;
-        range.numberFormat = cell.numberFormat;
-      }
-    }
-    await context.sync();
   });
 };
 
-export const updateTableBullCase = async (pos, matrix) => {
-  if (!matrix || !matrix.length || !pos) {
-    return;
-  }
-  await Excel.run(async context => {
-    const sheets = context.workbook.worksheets;
-    let firstSheet = sheets.getFirst();
-    let sheet = sheets.getItem("Scenario Analysis");
-    const _matrix = matrix.map(v => {
-      return v.map(vv => {
-        const range = firstSheet.getRange(vv);
-        range.load("values, numberFormat");
-        return range;
-      });
-    });
-    await context.sync();
-    for (let i = 0, l = _matrix.length; i < l; i++) {
-      for (let ii = 0, ll = _matrix[i].length; ii < ll; ii++) {
-        const cell = _matrix[i][ii];
-        const range = sheet.getRange(`${excelColumnName.intToExcelCol(pos.startCol + ii)}${i + 3}`);
-        range.values = cell.values;
-        range.numberFormat = cell.numberFormat;
-      }
-    }
-    await context.sync();
-  });
-};
-
-export const updateTableBearCase = async (pos, matrix) => {
+export const updateTable = async (pos, matrix) => {
   if (!matrix || !matrix.length || !pos) {
     return;
   }
@@ -591,7 +548,7 @@ export const activeCaseByPos = async (toPos, fromPos) => {
         toPos.endCol
       )}${toPos.endRow}`
     );
-    range.format.fill.color = "#FFFED1";
+    range.format.fill.color = "yellow";
     await context.sync();
   });
 };
@@ -608,11 +565,76 @@ export const duplicateSheet = async worksheetName => {
   });
 };
 
-// export const inactiveAllCase = async (pos1, pos2, pos3) => {
-//   await Excel.run(async context => {
-//     const sheets = context.workbook.worksheets;
-//     let sheet = sheets.getItem("Scenario Analysis");
+export const drawChart = async (aYear, eYear, matrix) => {
+  await Excel.run(async context => {
+    const _aYear = aYear.split(",");
+    const _eYear = eYear.split(",");
+    const aYearLen = _aYear.length;
+    const eYearLen = _eYear.length;
+    const matrixLen = matrix.length;
 
-//     await context.sync();
-//   });
-// };
+    const sheets = context.workbook.worksheets;
+    const sheet = sheets.getItem("Scenario Analysis");
+
+    for (let i = 0, l = matrixLen; i < l; i++) {
+      const titleRange = sheet.getRange(`A${i + 3}`);
+      const col1Range = sheet.getRange(`B${i + 3}`);
+      const b2Range = sheet.getRange(`B2`);
+      const bMaxRange = sheet.getRange(`${excelColumnName.intToExcelCol(2 + aYearLen + aYearLen)}2`);
+      titleRange.load("values");
+      col1Range.load("values");
+      b2Range.load("values");
+      bMaxRange.load("values");
+      await context.sync();
+
+      // const dataRange = sheet.getRange("G63:P67");
+      const dataRange = sheet.getRange(
+        `${excelColumnName.intToExcelCol(1 + aYearLen)}${matrixLen +
+          100 +
+          i * (2 + eYearLen)}:${excelColumnName.intToExcelCol(1 + aYearLen + aYearLen + eYearLen)}${matrixLen +
+          100 +
+          1 +
+          eYearLen +
+          i * (2 + eYearLen)}`
+      );
+      const chart = sheet.charts.add("XYScatterSmooth", dataRange, "auto");
+      chart.setPosition(
+        `${excelColumnName.intToExcelCol(aYearLen + 1 + (i % 2 == 0 ? 1 : 10))}${matrixLen +
+          10 +
+          i * 11 +
+          (i % 2 == 0 ? 0 : -11)}`,
+        `${excelColumnName.intToExcelCol(aYearLen + 1 + (i % 2 == 0 ? 9 : 18))}${matrixLen +
+          10 +
+          11 +
+          i * 11 +
+          (i % 2 == 0 ? 10 : -1)}`
+      );
+
+      chart.title.text = titleRange.values + "";
+
+      chart.legend.position = "bottom";
+      chart.legend.format.fill.setSolidColor("white");
+      const series0 = chart.series.getItemAt(0);
+      const series1 = chart.series.getItemAt(1);
+      const series2 = chart.series.getItemAt(2);
+      const series3 = chart.series.getItemAt(3);
+
+      series0.format.line.color = "#808080";
+      series1.format.line.color = "#2A4979";
+      series2.format.line.color = "#4EAD5B";
+      series3.format.line.color = "#B02318";
+
+      series1.format.line.lineStyle = "Dash";
+      series2.format.line.lineStyle = "Dash";
+      series3.format.line.lineStyle = "Dash";
+
+      const valueAxis = chart.axes.valueAxis;
+      const categoryAxis = chart.axes.categoryAxis;
+
+      valueAxis.minimum = parseFloat(col1Range.values);
+      categoryAxis.minimum = parseFloat(b2Range.values);
+      categoryAxis.maximum = parseFloat(bMaxRange.values);
+      await context.sync();
+    }
+  });
+};

@@ -10,20 +10,13 @@ import {
   Separator,
   DetailsList,
   DetailsListLayoutMode,
-  Icon,
-  CommandBarButton,
-  MessageBarType,
-  MessageBar,
-  MessageBarButton,
-  ActionButton,
   SelectionMode,
   SpinButton,
   Stack,
   Label,
   SearchBox,
   ChoiceGroup,
-  Spinner,
-  SpinnerSize
+  Spinner
 } from "office-ui-fabric-react";
 // import { mergeStyles, mergeStyleSets } from "office-ui-fabric-react/lib/Styling";
 /* global Button, console, Excel, Header, HeroList, HeroListItem, Progress */
@@ -32,12 +25,10 @@ import {
   getYearValues,
   drawTableFixedMatrix,
   getPosition,
-  updateTableBaseCase,
-  updateTableBullCase,
-  updateTableBearCase,
+  updateTable,
+  updateDriverData,
   activeCaseByPos,
   getDriver,
-  duplicateSheet,
   updateDriverNames,
   setDriverIntoFirstSheet,
   resetDrivers,
@@ -262,6 +253,22 @@ const App = () => {
       driverName: "",
       min: -1000000,
       max: 1000000
+    },
+    {
+      key: 4,
+      driver: 4,
+      disable: true,
+      driverName: "",
+      min: -1000000,
+      max: 1000000
+    },
+    {
+      key: 5,
+      driver: 5,
+      disable: true,
+      driverName: "",
+      min: -1000000,
+      max: 1000000
     }
   ]);
 
@@ -299,12 +306,12 @@ const App = () => {
       await getYearValues(payload.year.e, async yearValueArr => {
         setYearArr(yearValueArr);
         await drawTableFixedMatrix(payload.year.a, payload.year.e, tableFixedMatrix);
-        await updateTableBaseCase(getBasePos(), tableDynamicMatrix);
-        await updateTableBullCase(getBullPos(), tableDynamicMatrix);
-        await updateTableBearCase(getBearPos(), tableDynamicMatrix);
+        await updateTable(getBasePos(), tableDynamicMatrix);
+        await updateTable(getBullPos(), tableDynamicMatrix);
+        await updateTable(getBearPos(), tableDynamicMatrix);
 
         await activeCaseByPos(getBasePos());
-        await drawChart();
+        await drawChart(payload.year.a, payload.year.e, tableFixedMatrix);
         setLoading(false);
       });
     });
@@ -366,6 +373,18 @@ const App = () => {
           locationObjects.year.a.split(",").length,
           cacheArr.map(v => ({ driverName: v.title.values, row: v.row, cols: v.cols }))
         );
+        await updateDriverData(
+          getBasePos(),
+          cacheArr.map(v => v.cols)
+        );
+        await updateDriverData(
+          getBullPos(),
+          cacheArr.map(v => v.cols)
+        );
+        await updateDriverData(
+          getBearPos(),
+          cacheArr.map(v => v.cols)
+        );
       }
     });
   };
@@ -392,7 +411,7 @@ const App = () => {
         locationObjects.year.a.split(",").length,
         cacheArr.map(v => ({ driverName: v.title.values, row: v.row, cols: v.cols }))
       );
-      await setCase();
+      await resetAll();
     }
   };
 
@@ -442,13 +461,43 @@ const App = () => {
     await setCase();
   }, 1000);
 
+  const resetAll = async () => {
+    await updateTable(getBasePos(), tableDynamicMatrix);
+    await updateTable(getBullPos(), tableDynamicMatrix);
+    await updateTable(getBearPos(), tableDynamicMatrix);
+    await updateDriverData(
+      getBasePos(),
+      cacheArr.map(v => v.cols)
+    );
+    await updateDriverData(
+      getBullPos(),
+      cacheArr.map(v => v.cols)
+    );
+    await updateDriverData(
+      getBearPos(),
+      cacheArr.map(v => v.cols)
+    );
+  };
+
   const setCase = async () => {
     if (currentType == "base") {
-      await updateTableBaseCase(getBasePos(), tableDynamicMatrix);
+      await updateTable(getBasePos(), tableDynamicMatrix);
+      await updateDriverData(
+        getBasePos(),
+        cacheArr.map(v => v.cols)
+      );
     } else if (currentType == "bull") {
-      await updateTableBullCase(getBullPos(), tableDynamicMatrix);
+      await updateTable(getBullPos(), tableDynamicMatrix);
+      await updateDriverData(
+        getBullPos(),
+        cacheArr.map(v => v.cols)
+      );
     } else {
-      await updateTableBearCase(getBearPos(), tableDynamicMatrix);
+      await updateTable(getBearPos(), tableDynamicMatrix);
+      await updateDriverData(
+        getBearPos(),
+        cacheArr.map(v => v.cols)
+      );
     }
   };
 
@@ -581,9 +630,9 @@ const App = () => {
                 />
               )}
             </Stack>
-            <Stack horizontal>
+            {/* <Stack horizontal>
               <PrimaryButton>New Driver</PrimaryButton>
-            </Stack>
+            </Stack> */}
           </Stack>
         </>
       )}
