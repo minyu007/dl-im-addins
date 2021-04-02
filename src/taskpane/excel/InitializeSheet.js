@@ -580,6 +580,7 @@ export const drawChart = async (aYear, eYear, matrix) => {
       const titleRange = sheet.getRange(`A${i + 3}`);
       const arr = aYearValueRangeArr[i].map(v => parseFloat(v.values));
       let minimum = _.min(arr);
+      minimum = Math.round(minimum * 0.8 * 1e12) / 1e12;
 
       const b2Range = sheet.getRange(`B2`);
       const bMaxRange = sheet.getRange(`${excelColumnName.intToExcelCol(2 + aYearLen + aYearLen)}2`);
