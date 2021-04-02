@@ -1,3 +1,5 @@
 node_modules
 .DS_Store
 src/app.js
+dist
+senario-analysis

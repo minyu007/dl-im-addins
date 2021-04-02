@@ -207,7 +207,6 @@ const App = () => {
               value={item[`y${i}`] ? item[`y${i}`] : 0}
               min={item.min}
               max={item.max}
-              onChange={e => spinBtnBlur(e.target.value, item[`address${i}`])}
               onIncrement={v => increment(v, item[`step${i}`], item[`address${i}`])}
               onDecrement={v => decrement(v, item[`step${i}`], item[`address${i}`])}
               step={item[`step${i}`] ? item[`step${i}`] : 1}
@@ -455,11 +454,6 @@ const App = () => {
     const newValue = Math.round((value - step) * 1e12) / 1e12;
     setDriver(address, newValue);
     return newValue;
-  };
-
-  const spinBtnBlur = (value, address) => {
-    const newValue = Math.round(value * 1e12) / 1e12;
-    setDriver(address, newValue);
   };
 
   const setDriver = _.debounce(async (address, newValue) => {
