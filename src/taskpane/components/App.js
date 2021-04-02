@@ -338,7 +338,7 @@ const App = () => {
     const arr = [...items];
     const _item = arr[item.key - 1];
     await getDriver(value, async (driverArr, title) => {
-      if (driverArr && driverArr.length && isValidDrive(driverArr)) {
+      if (driverArr && driverArr.length) {
         const index = cacheArr.findIndex(v => v.key == item.key);
         // setTest1Value(index);
         if (index != -1) {

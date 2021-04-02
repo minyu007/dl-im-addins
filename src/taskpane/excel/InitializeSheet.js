@@ -651,7 +651,7 @@ export const drawChart = async (aYear, eYear, matrix) => {
       const valueAxis = chart.axes.valueAxis;
       const categoryAxis = chart.axes.categoryAxis;
 
-      valueAxis.minimum = parseFloat(minimum);
+      // valueAxis.minimum = parseFloat(minimum);
       categoryAxis.minimum = parseFloat(b2Range.values);
       categoryAxis.maximum = parseFloat(bMaxRange.values);
       await context.sync();
