@@ -95,6 +95,8 @@ export const getPosition = async (arr, callback) => {
 
       const arr1 = [];
       const arr2 = [];
+      const _arr1 = [];
+      const _arr2 = [];
       for (let i = 0, l = rangeE.length; i < l; i++) {
         const values = `${rangeE[i].values}`;
         const address = rangeE[i].address;
@@ -102,9 +104,11 @@ export const getPosition = async (arr, callback) => {
           values.length == 4 &&
           /^[0-9]+[0-9]*[0-9]*$/.test(values) &&
           parseInt(values) >= 2015 &&
-          parseInt(values) <= 2023
+          parseInt(values) <= 2026 &&
+          !_arr1.find(v => v == values)
         ) {
           arr1.push(address);
+          _arr1.push(values);
         }
       }
       for (let i = 0, l = rangeA.length; i < l; i++) {
@@ -114,9 +118,11 @@ export const getPosition = async (arr, callback) => {
           values.length == 4 &&
           /^[0-9]+[0-9]*[0-9]*$/.test(values) &&
           parseInt(values) >= 2015 &&
-          parseInt(values) <= 2023
+          parseInt(values) <= 2026 &&
+          !_arr2.find(v => v == values)
         ) {
           arr2.push(address);
+          _arr2.push(values);
         }
       }
       strE = arr1.join(",");
@@ -439,7 +445,7 @@ export const updateDriverNames = async (len1, len2, driver) => {
   await Excel.run(async context => {
     const sheets = context.workbook.worksheets;
     let sheet = sheets.getItem("Scenario Analysis");
-    const range1 = sheet.getRange(`A${len1 + 4}:${excelColumnName.intToExcelCol(12 + len2 + len1)}${len1 + 10}`);
+    const range1 = sheet.getRange(`A${len1 + 4}:${excelColumnName.intToExcelCol(100 + len2 + len1)}${len1 + 10}`);
     // range1.format.fill.color = "white";
     range1.clear();
 
@@ -634,10 +640,14 @@ export const drawChart = async (aYear, eYear, matrix) => {
       // series1.markerStyle = "Dot";
       // series2.markerStyle = "Dot";
       // series3.markerStyle = "Dot";
-      series0.markerBackgroundColor = "white";
-      series1.markerBackgroundColor = "white";
-      series2.markerBackgroundColor = "white";
-      series3.markerBackgroundColor = "white";
+      // series0.markerBackgroundColor = "white";
+      // series1.markerBackgroundColor = "white";
+      // series2.markerBackgroundColor = "white";
+      // series3.markerBackgroundColor = "white";
+      series0.markerBackgroundColor = "#808080";
+      series1.markerBackgroundColor = "#2A4979";
+      series2.markerBackgroundColor = "#4EAD5B";
+      series3.markerBackgroundColor = "#B02318";
 
       series0.markerForegroundColor = "#808080";
       series1.markerForegroundColor = "#2A4979";
@@ -651,9 +661,12 @@ export const drawChart = async (aYear, eYear, matrix) => {
       const valueAxis = chart.axes.valueAxis;
       const categoryAxis = chart.axes.categoryAxis;
 
+      // chart.dataLabels.position = "top";
+
       // valueAxis.minimum = parseFloat(minimum);
       categoryAxis.minimum = parseFloat(b2Range.values);
       categoryAxis.maximum = parseFloat(bMaxRange.values);
+      categoryAxis.tickLabelPosition = "Low";
       await context.sync();
     }
   });

@@ -517,46 +517,26 @@ const App = () => {
         }}
         modalProps={{
           isBlocking: false,
-          styles: { main: { maxWidth: 450 } }
+          styles: { main: { maxWidth: 600 } }
         }}
       >
         <Stack tokens={{ childrenGap: 10 }}>
           <Checkbox label="Total revenues" disabled defaultChecked />
           <Checkbox label="Pre Exceptional EBIT" defaultChecked />
           <Checkbox label="Pre Exceptional EPS" defaultChecked />
-          <Checkbox
-            onChange={() => {
-              handleSelfCustomize1();
+          <TextField
+            placeholder="Customize: Please input row number"
+            value={customize1Value}
+            onChange={e => {
+              setCustomize1Value(e.target.value);
             }}
-            onRenderLabel={() => (
-              <TextField
-                label="Self-customize 1:"
-                underlined
-                placeholder="Row NO."
-                value={customize1Value}
-                disabled={!selfCustomize1Checked}
-                onChange={e => {
-                  setCustomize1Value(e.target.value);
-                }}
-              />
-            )}
           />
-          <Checkbox
-            onChange={() => {
-              handleSelfCustomize2();
+          <TextField
+            placeholder="Customize: Please input row number"
+            value={customize2Value}
+            onChange={e => {
+              setCustomize2Value(e.target.value);
             }}
-            onRenderLabel={() => (
-              <TextField
-                label="Self-customize 2"
-                value={customize2Value}
-                disabled={!selfCustomize2Checked}
-                underlined
-                onChange={e => {
-                  setCustomize2Value(e.target.value);
-                }}
-                placeholder="Row NO."
-              />
-            )}
           />
           {/* <Checkbox label="Disabled checked checkbox" /> */}
         </Stack>
