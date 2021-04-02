@@ -20,6 +20,9 @@ const titleArr = [
 ];
 
 const aYearValueRangeArr = [];
+const eYearRangeArr = [];
+let strE = "";
+let strA = "";
 
 export const getPosition = async (arr, callback) => {
   try {
@@ -116,8 +119,8 @@ export const getPosition = async (arr, callback) => {
           arr2.push(address);
         }
       }
-      const strE = arr1.join(",");
-      const strA = arr2.join(",");
+      strE = arr1.join(",");
+      strA = arr2.join(",");
 
       let rangeObj = {
         year: {
@@ -182,7 +185,7 @@ export const getDriver = async (row, callback) => {
       totalRevenuesRange.load("address, values");
 
       await context.sync();
-      const address = estimateRanges.address.replace(/(\d)+/g, row);
+      const address = strE.replace(/(\d)+/g, row);
       const addressArr = address.split(",");
       const arr = addressArr.map(v => {
         const range = sheet.getRange(v);
@@ -267,7 +270,7 @@ export const drawTableFixedMatrix = async (aYear, eYear, matrix) => {
     sheet.showGridlines = false;
     sheet.freezePanes.freezeAt(sheet.getRange("A1:A2"));
     sheet.activate();
-    const eYearRangeArr = [];
+    // const eYearRangeArr = [];
     const caseRangeArr = [];
     const titleRangeArr = [];
 
@@ -297,7 +300,7 @@ export const drawTableFixedMatrix = async (aYear, eYear, matrix) => {
       _range.format.fill.color = title.fillColor;
       _range.format.font.color = title.fontColor;
       _range.format.horizontalAlignment = "Center";
-      _range.load("address,numberFormat");
+      _range.load("address, numberFormat");
       caseRangeArr.push(_range);
       eYearRangeArr.push(caseArr);
     }
