@@ -1,4 +1,5 @@
 import excelColumnName from "excel-column-name";
+import _ from "lodash";
 
 const titleArr = [
   {
@@ -17,6 +18,8 @@ const titleArr = [
     fontColor: "white"
   }
 ];
+
+const aYearValueRangeArr = [];
 
 export const getPosition = async (arr, callback) => {
   try {
@@ -92,14 +95,24 @@ export const getPosition = async (arr, callback) => {
       for (let i = 0, l = rangeE.length; i < l; i++) {
         const values = `${rangeE[i].values}`;
         const address = rangeE[i].address;
-        if (values.length == 4 && /^[0-9]+[0-9]*[0-9]*$/.test(values) && parseInt(values) >= 2015) {
+        if (
+          values.length == 4 &&
+          /^[0-9]+[0-9]*[0-9]*$/.test(values) &&
+          parseInt(values) >= 2015 &&
+          parseInt(values) <= 2023
+        ) {
           arr1.push(address);
         }
       }
       for (let i = 0, l = rangeA.length; i < l; i++) {
         const values = `${rangeA[i].values}`;
         const address = rangeA[i].address;
-        if (values.length == 4 && /^[0-9]+[0-9]*[0-9]*$/.test(values) && parseInt(values) >= 2015) {
+        if (
+          values.length == 4 &&
+          /^[0-9]+[0-9]*[0-9]*$/.test(values) &&
+          parseInt(values) >= 2015 &&
+          parseInt(values) <= 2023
+        ) {
           arr2.push(address);
         }
       }
@@ -312,7 +325,6 @@ export const drawTableFixedMatrix = async (aYear, eYear, matrix) => {
     sheet.getRange(`B:${excelColumnName.intToExcelCol(aYearLen)}`).group("ByColumns");
     sheet.getRange(`B:${excelColumnName.intToExcelCol(aYearLen)}`).hideGroupDetails("ByColumns");
 
-    const aYearValueRangeArr = [];
     for (let i = 0, l = matrixLen; i < l; i++) {
       const title = matrix[i][0];
       const titleRange = sheet.getRange(`A${i + 3}`);
@@ -330,7 +342,7 @@ export const drawTableFixedMatrix = async (aYear, eYear, matrix) => {
         await context.sync();
         range.formulas = [[`=${col}`]];
         range.numberFormat = _range.numberFormat;
-        range.load("address", "numberFormat");
+        range.load("address, numberFormat, values");
         arr.push(range);
       }
       aYearValueRangeArr.push(arr);
@@ -553,18 +565,6 @@ export const activeCaseByPos = async (toPos, fromPos) => {
   });
 };
 
-export const duplicateSheet = async worksheetName => {
-  await Excel.run(async context => {
-    var worksheet = context.workbook.worksheets.getFirst();
-    var range = worksheet.getUsedRange();
-    range.load("values", "address");
-    var newWorksheet = context.workbook.worksheets.add("Backup");
-    await context.sync();
-    var newAddress = range.address.substring(range.address.indexof("!") + 1);
-    newWorksheet.getRange(newAddress).values = range.values;
-  });
-};
-
 export const drawChart = async (aYear, eYear, matrix) => {
   await Excel.run(async context => {
     const _aYear = aYear.split(",");
@@ -578,11 +578,13 @@ export const drawChart = async (aYear, eYear, matrix) => {
 
     for (let i = 0, l = matrixLen; i < l; i++) {
       const titleRange = sheet.getRange(`A${i + 3}`);
-      const col1Range = sheet.getRange(`B${i + 3}`);
+      const arr = aYearValueRangeArr[i].map(v => parseFloat(v.values));
+      let minimum = _.min(arr);
+
       const b2Range = sheet.getRange(`B2`);
       const bMaxRange = sheet.getRange(`${excelColumnName.intToExcelCol(2 + aYearLen + aYearLen)}2`);
       titleRange.load("values");
-      col1Range.load("values");
+      // col1Range.load("values");
       b2Range.load("values");
       bMaxRange.load("values");
       await context.sync();
@@ -645,7 +647,7 @@ export const drawChart = async (aYear, eYear, matrix) => {
       const valueAxis = chart.axes.valueAxis;
       const categoryAxis = chart.axes.categoryAxis;
 
-      valueAxis.minimum = parseFloat(col1Range.values);
+      valueAxis.minimum = parseFloat(minimum);
       categoryAxis.minimum = parseFloat(b2Range.values);
       categoryAxis.maximum = parseFloat(bMaxRange.values);
       await context.sync();
