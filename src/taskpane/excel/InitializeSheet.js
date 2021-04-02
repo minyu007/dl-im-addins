@@ -171,17 +171,17 @@ export const getDriver = async (row, callback) => {
     await Excel.run(async context => {
       const sheet = context.workbook.worksheets.getFirst();
 
-      const estimateRanges = sheet.findAll("E", {
-        completeMatch: true,
-        matchCase: false
-      });
+      // const estimateRanges = sheet.findAll("E", {
+      //   completeMatch: true,
+      //   matchCase: false
+      // });
 
       const totalRevenuesRange = sheet.findAll("Total revenues", {
         completeMatch: true,
         matchCase: false
       });
 
-      estimateRanges.load("address, values");
+      // estimateRanges.load("address, values");
       totalRevenuesRange.load("address, values");
 
       await context.sync();
