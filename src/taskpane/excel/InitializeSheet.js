@@ -182,10 +182,40 @@ export const getDriver = async (row, callback) => {
       //   matchCase: false
       // });
 
-      const totalRevenuesRange = sheet.findAll("Total revenues", {
+      // const totalRevenuesRange = sheet.findAll("Total revenues", {
+      //   completeMatch: true,
+      //   matchCase: false
+      // });
+
+      let totalRevenuesRange = sheet.findAllOrNullObject("Total revenues", {
         completeMatch: true,
         matchCase: false
       });
+
+      let EBITRange = sheet.findAllOrNullObject("Pre Exceptional EBIT", {
+        completeMatch: true,
+        matchCase: false
+      });
+
+      let EPSRange = sheet.findAllOrNullObject("Pre Exceptional EPS", {
+        completeMatch: true,
+        matchCase: false
+      });
+      let topRange = null;
+
+      await context.sync();
+      if (!totalRevenuesRange.isNullObject) {
+        topRange = totalRevenuesRange;
+        totalRevenuesRange.load("address, values");
+      }
+      if (!EBITRange.isNullObject) {
+        topRange = EBITRange;
+        EBITRange.load("address, values");
+      }
+      if (!EPSRange.isNullObject) {
+        topRange = EPSRange;
+        EPSRange.load("address, values");
+      }
 
       // estimateRanges.load("address, values");
       totalRevenuesRange.load("address, values");
@@ -198,7 +228,7 @@ export const getDriver = async (row, callback) => {
         range.load("address, values,valueTypes, formulas, format, numberFormat, formulasLocal, formulasR1C1");
         return range;
       });
-      const titleAddress = totalRevenuesRange.address.replace(/(\d)+/g, row);
+      const titleAddress = topRange.address.replace(/(\d)+/g, row);
       const titleRange = sheet.getRange(titleAddress);
       titleRange.load("address, values,valueTypes, formulas, format, numberFormat, formulasLocal, formulasR1C1");
 
